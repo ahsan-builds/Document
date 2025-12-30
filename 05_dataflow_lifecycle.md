@@ -422,3 +422,76 @@ WHERE id = 5
 - Refreshes applicant list with new status
 - Status badge changes color (e.g., yellow → green)
 
+
+---
+
+## Data Lifecycle Principles
+
+### Data Governance
+- **Single source of truth** per domain (users, jobs, applications).
+- **Auditability** with immutable log records (login history, status transitions).
+- **Retention policies** for resumes and derived AI profiles.
+
+### Data Quality
+- **Validation at ingestion** (serializers, file type checks).
+- **Normalization** for structured fields (skills, titles).
+- **Error states** for failed extraction to avoid silent corruption.
+
+---
+
+## Practical Examples
+
+### Example: Resume Reprocessing
+1. Recruiter updates a resume file.
+2. Application record is updated with new resume bytes.
+3. Applicant profile is flagged for re-extraction.
+4. New AI profile overwrites or version-tags the existing entry.
+
+### Example: Status Transition Timeline
+- `applied` → `reviewed` → `shortlisted` → `offer` → `hired`
+- Each transition is timestamped and auditable.
+
+---
+
+## Use Cases
+
+### Use Case: Compliance Reporting
+- **Goal**: Demonstrate data access and changes for audits.
+- **Flow**: Pull login history, application status changes, and profile extraction logs.
+
+### Use Case: Analytics and KPIs
+- **Goal**: Track time-to-hire and application conversion rates.
+- **Flow**: Aggregate application statuses and timestamps.
+
+---
+
+## Best Practices
+
+- **Event-driven updates** for extraction and scoring tasks.
+- **Data anonymization** when exporting for analytics or testing.
+- **Regular schema reviews** to ensure AI outputs align with business needs.
+
+---
+
+## Limitations
+
+- Data flows are synchronous in several paths, which can increase latency.
+- BLOB storage of resumes may complicate analytics pipelines.
+
+---
+
+## FAQ
+
+**Q: How do we handle resume updates?**  
+A: Replace the resume in the application record and trigger re-extraction.
+
+**Q: What if AI output conflicts with user-provided data?**  
+A: Favor user-entered data as the source of truth and flag discrepancies.
+
+---
+
+## Future Considerations
+
+- **Event sourcing** for end-to-end state reconstruction.
+- **CDC pipelines** for real-time analytics.
+- **Data catalogs** and lineage tracking for compliance.

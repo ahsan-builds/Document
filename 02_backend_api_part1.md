@@ -124,3 +124,98 @@ Set-Cookie: sessionid=<session_key>; HttpOnly; Path=/; SameSite=Lax
 }
 ```
 
+
+---
+
+## API Philosophy and Design Standards
+
+### REST Conventions
+- **Resource-oriented endpoints** with nouns, not verbs.
+- **Stateless requests** with explicit inputs and authentication context.
+- **Consistent error envelopes** that include error code, message, and field-level details.
+
+### Validation and Serialization
+- Centralized **serializer validation** ensures a single source of truth.
+- **Explicit field constraints** prevent ambiguous behaviors (e.g., email formatting, password strength).
+
+---
+
+## Authentication and Session Management (Deep Dive)
+
+### Background Theory
+Session-based authentication uses a server-side store keyed by a secure cookie (`sessionid`). This supports server-driven invalidation and built-in CSRF protection.
+
+### Session Lifecycle
+1. User submits credentials to `/users/login/`.
+2. Backend validates credentials and issues a session cookie.
+3. Cookie is sent on subsequent requests by the browser.
+4. Logout invalidates server-side session state.
+
+### Practical Example: Login Sequence
+```http
+POST /users/login/
+Content-Type: application/json
+{
+  "email": "recruiter@acme.com",
+  "password": "••••••••"
+}
+```
+**Expected Response**: `200 OK` + `Set-Cookie: sessionid=...; HttpOnly`
+
+---
+
+## Use Cases
+
+### Use Case: Secure Administrator Onboarding
+- **Actors**: HR Admin, Auth service
+- **Goal**: Register a new admin and enforce password policy
+- **Flow**: Register → Login → Change password on first login
+- **Outcome**: Admin is authenticated with audited login history
+
+### Use Case: Account Recovery (Future)
+- **Goal**: Enable password reset without exposing account enumeration
+- **Notes**: Would require a secure token flow and email verification.
+
+---
+
+## Best Practices for Consumers
+
+- **Send credentials over HTTPS only**.
+- **Use `withCredentials: true`** in browser requests to send cookies.
+- **Retry only idempotent operations**; do not retry login without user confirmation.
+- **Avoid storing session cookies in local storage**.
+
+---
+
+## Common Errors and Troubleshooting
+
+| Error | Likely Cause | Resolution |
+|------|--------------|-----------|
+| 403 CSRF Failed | Missing CSRF token | Include CSRF token header in unsafe methods. |
+| 401 Unauthorized | Session expired | Re-authenticate to obtain a new session. |
+| 400 Bad Request | Validation error | Check serializer error details. |
+
+---
+
+## Limitations
+
+- Session authentication is primarily optimized for browser clients.
+- Horizontal scaling requires shared session storage (e.g., Redis) if default DB sessions are insufficient.
+
+---
+
+## FAQ
+
+**Q: Can we use JWT alongside session auth?**  
+A: Yes, but it requires separate authentication classes and clear client segmentation.
+
+**Q: Why store login history?**  
+A: It supports audit trails, anomaly detection, and compliance.
+
+---
+
+## Future Enhancements
+
+- **Multi-factor authentication (MFA)** for privileged accounts.
+- **Session management UI** for admins (active sessions list, remote logout).
+- **Password rotation policies** configurable per organization.
