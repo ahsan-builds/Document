@@ -338,3 +338,69 @@
 }
 ```
 
+
+---
+
+## Application and Job APIs (Extended Guidance)
+
+### Background Theory
+Applications form a many-to-one relationship between applicants and job postings. Each application encapsulates resume artifacts, status metadata, and derived scores. This model enables lifecycle tracking and analytics.
+
+### Practical Example: Submitting an Application
+```http
+POST /api/applications/
+Content-Type: multipart/form-data
+
+fields:
+  job_id: 42
+  name: "Jane Doe"
+  email: "jane@example.com"
+  resume: resume.pdf
+```
+**Expected Response**: `201 Created` with application ID and resume URL.
+
+---
+
+## Use Cases
+
+### Use Case: Automated Shortlisting
+- **Actors**: Recruiter, Scoring service
+- **Goal**: Prioritize candidates based on AI score
+- **Flow**: Application submitted → Score computed → Status updated → Recruiter review
+
+### Use Case: Job Posting Lifecycle
+- **Goal**: Publish, close, and archive job postings
+- **Flow**: Create job → Set status to `open` → Close → Archive for analytics
+
+---
+
+## Best Practices
+
+- **Validate resumes** for size and MIME type before storage.
+- **Make status transitions explicit** (e.g., `applied → reviewed → shortlisted`).
+- **Log scoring metadata** to support transparency and tuning.
+
+---
+
+## Limitations
+
+- Resume files are stored in the database as BLOBs, which can increase DB size over time.
+- Score calculation depends on external services (OpenAI, Qdrant), impacting latency.
+
+---
+
+## FAQ
+
+**Q: How are application scores updated?**  
+A: A `PATCH /api/applications/<id>/` call can update the score based on the MLOps calculation.
+
+**Q: Can applications be deleted?**  
+A: The current API favors status updates. Hard deletes can be added with appropriate audit controls.
+
+---
+
+## Future Considerations
+
+- **Asynchronous scoring** via background workers.
+- **Versioned scoring models** to compare historical scores.
+- **File storage migration** to object storage (S3/GCS) for scale.

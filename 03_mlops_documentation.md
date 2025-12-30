@@ -163,3 +163,86 @@ JOB_COLLECTION=job_descriptions
 - Structured JSON output via Pydantic
 - Lower cost than GPT-4
 
+
+---
+
+## Theoretical Background
+
+### Retrieval-Augmented Generation (RAG)
+RAG combines information retrieval with generative models. Instead of relying solely on model parameters, relevant text is retrieved, embedded, and fed into the model, yielding more grounded outputs.
+
+### Vector Embeddings and Similarity
+Embeddings represent text as high-dimensional vectors. Similarity (often cosine similarity) quantifies closeness between resume content and job descriptions, enabling ranking.
+
+### Structured Extraction with LLMs
+Structured extraction uses a schema-driven prompt and a parser. This ensures predictable fields and types for downstream processing.
+
+---
+
+## Practical Examples
+
+### Example: Resume Extraction Output (Simplified)
+```json
+{
+  "summary": "Data analyst with 5 years...",
+  "skills": [{"name": "Python", "level": "advanced"}],
+  "experience": [
+    {"company": "Acme", "title": "Analyst", "years": 3}
+  ]
+}
+```
+
+### Example: Scoring Calculation (Conceptual)
+- Projects similarity: 0.82 × 50%
+- Skills similarity: 0.78 × 25%
+- Experience similarity: 0.70 × 15%
+- Education similarity: 0.65 × 10%
+**Final score**: 0.77 (77/100)
+
+---
+
+## Use Cases
+
+### Use Case: Automated Resume Parsing
+- **Goal**: Convert unstructured resumes into structured profiles for search and analytics.
+- **Outcome**: Consistent profiles across applicants, searchable by skill and experience.
+
+### Use Case: Job-Candidate Matching
+- **Goal**: Rank candidates by relevance to a job description.
+- **Outcome**: Prioritized candidate lists for recruiter review.
+
+---
+
+## Best Practices
+
+- **Prompt versioning**: Store prompt templates with version IDs.
+- **Schema validation**: Fail fast on invalid AI output and capture raw responses.
+- **Sampling control**: Use temperature=0 for determinism in extraction tasks.
+- **Cost management**: Limit input size with truncation and summarize long sections.
+
+---
+
+## Limitations
+
+- **Hallucinations**: LLMs can infer details not present in the resume.
+- **File diversity**: Complex resume layouts may be parsed inconsistently.
+- **Latency**: External model calls add response time variability.
+
+---
+
+## FAQ
+
+**Q: Why use GPT-4o-mini instead of a larger model?**  
+A: It balances cost, latency, and accuracy for structured extraction.
+
+**Q: How are embeddings stored?**  
+A: Resume and job embeddings are stored in Qdrant for fast similarity search.
+
+---
+
+## Future Considerations
+
+- **Human-in-the-loop review** for low-confidence extractions.
+- **Adaptive scoring** using historical recruiter feedback.
+- **Model fine-tuning** to improve domain-specific extraction accuracy.
+- **Multilingual resume support** via language detection and translation.

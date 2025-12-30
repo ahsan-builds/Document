@@ -305,3 +305,119 @@ BaseService.interceptors.response.use(
 
 **Purpose**: Automatically logs out users when backend returns 401/403 (session expired or unauthorized).
 
+
+---
+
+## Architectural Principles and Design Goals
+
+### Core Principles
+- **Separation of concerns**: Each tier (frontend, backend, MLOps) owns a clear responsibility and exposes stable contracts. This reduces coupling and enables independent evolution.
+- **API-first design**: The backend is treated as a headless service. All client features are modeled as explicit API calls with predictable schemas.
+- **Deterministic AI integration**: The MLOps layer favors structured outputs and deterministic settings (temperature=0) to support repeatable downstream processing.
+- **Operational resilience**: Use idempotent operations for updates, defensive validation at boundaries, and explicit error handling across service seams.
+
+### Quality Attributes
+- **Scalability**: Stateless web tier, horizontally scalable Django application servers, and externalized state (PostgreSQL/Qdrant).
+- **Maintainability**: Modular Django apps, service-layered frontend, and discrete MLOps utilities enable isolated changes.
+- **Security**: Session authentication, CSRF protection, and strict CORS policies for the browser client.
+- **Observability**: Logging at each tier and predictable request lifecycles for tracing.
+
+---
+
+## Data Ownership and Contract Boundaries
+
+### Ownership Matrix
+| Domain | System of Record | Notes |
+|--------|------------------|-------|
+| Users and authentication | Django backend | Uses Django’s auth model + custom profile tables. |
+| Job postings | Django backend | CRUD-managed in `posts` app. |
+| Applications | Django backend | Links applicants to jobs and owns resume binaries. |
+| Applicant AI profile | Django backend | Stores structured, versionable AI output. |
+| Vectorized job descriptions | Qdrant | Derived data, re-computable from job records. |
+
+### Contract Design
+- **Input validation** occurs at the boundary (serializers and schema checks).
+- **Backward compatibility** is maintained by additive fields and optional values.
+- **Explicit error semantics**: 4xx for client errors, 5xx for server errors, with consistent error body format.
+
+---
+
+## Deployment and Runtime Topology
+
+### Environments
+- **Local development**: Single-machine setup with Django + Vite dev server + local env variables for MLOps.
+- **Staging**: Mirrors production infrastructure; uses anonymized data and separate Qdrant collections.
+- **Production**: Hardened services, managed database, and secrets vault for API keys.
+
+### Deployment Considerations
+- **Django**: Run behind a reverse proxy (Nginx) with gunicorn/uvicorn workers.
+- **Frontend**: Static asset hosting with cache headers and immutable builds.
+- **MLOps**: Containerized service for dependency isolation and predictable runtime.
+
+---
+
+## Failure Modes and Recovery Strategies
+
+| Failure Mode | Symptoms | Mitigation |
+|-------------|----------|------------|
+| Qdrant unavailable | Resume scoring fails | Return fallback score or defer scoring job. |
+| OpenAI rate limiting | Extraction latency | Queue requests, exponential backoff. |
+| Corrupt resume file | Extraction errors | Provide user feedback, store error state. |
+| Database connection loss | 500 errors | Connection pool retries, health checks. |
+
+---
+
+## Practical Examples
+
+### Example: End-to-End Applicant Flow
+1. Candidate submits application with resume.
+2. Backend stores resume and creates application record.
+3. Recruiter views applicant profile; backend triggers extraction if missing.
+4. MLOps extracts structured details and returns JSON.
+5. Backend stores AI profile and returns it to the frontend.
+
+### Example: Job Scoring Workflow
+1. Job description is embedded and stored in Qdrant.
+2. Resume text is chunked and embedded.
+3. Similarity scores are computed by category weights.
+4. Backend persists the score and returns updated application data.
+
+---
+
+## Best Practices
+
+- **Prefer explicit schema evolution**: add fields rather than modify or remove existing ones.
+- **Isolate MLOps errors**: store extraction errors without failing the primary API response.
+- **Use environment-specific settings**: strict CORS in production and separate keys per environment.
+- **Design idempotent mutations**: repeatable updates reduce accidental duplication.
+
+---
+
+## Limitations and Trade-Offs
+
+- **Session-based auth** is simple but less suitable for distributed clients compared to token-based systems.
+- **Synchronous extraction** increases latency on profile requests if not pre-processed.
+- **External AI dependencies** introduce cost variability and availability risk.
+
+---
+
+## Frequently Asked Questions (FAQ)
+
+**Q: Why use session auth instead of JWT?**  
+A: The application prioritizes browser-based sessions and Django’s built-in security features. JWT can be added for API consumers if needed.
+
+**Q: What happens if the resume extraction fails?**  
+A: The backend can store an error state and allow manual review or reprocessing.
+
+**Q: Can we change the AI model without refactoring?**  
+A: The Pydantic schema and parser form a stable contract; swapping the LLM primarily affects the prompt and configuration.
+
+---
+
+## Future Considerations
+
+- **Async processing**: background queue for extraction and scoring.
+- **Versioned AI outputs**: store multiple extraction versions per resume.
+- **Auditability**: retain prompt versions and AI response metadata for compliance.
+- **Multi-tenant isolation**: segregate data by company for SaaS scaling.
+- **Enhanced observability**: distributed tracing across frontend → backend → MLOps.

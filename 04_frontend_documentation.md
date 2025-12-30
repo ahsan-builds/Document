@@ -293,3 +293,77 @@ function App() {
 4. **Rendering**: Displays skills, experience, education in structured format
 5. **Social Links**: Shows LinkedIn/GitHub if extracted
 
+
+---
+
+## Frontend Architecture Principles
+
+### Component Design
+- **Presentational vs. container components** to separate UI from data fetching.
+- **Reusable UI primitives** for consistency (buttons, modals, tables).
+- **Type-safe interfaces** for service responses and Redux slices.
+
+### State Management Strategy
+- **Global state** in Redux for authenticated user, shared datasets, and cached lists.
+- **Local state** for form inputs and ephemeral UI state.
+
+---
+
+## Practical Examples
+
+### Example: Authentication Request Flow
+1. User submits login form.
+2. `AuthService.apiSignIn()` sends credentials to backend.
+3. Redux slice updates user state on success.
+4. Route guard grants access to authenticated routes.
+
+### Example: Application Submission
+- Form data is packaged via `FormData`.
+- `ApplicationService.createApplication()` posts to backend.
+- UI shows progress and handles validation errors.
+
+---
+
+## Use Cases
+
+### Use Case: Recruiter Dashboard
+- **Goal**: Provide summary metrics, pipeline status, and recent applications.
+- **Outcome**: Faster review and decision-making.
+
+### Use Case: Applicant Search and Filter
+- **Goal**: Locate applicants by job, status, or skill.
+- **Outcome**: Reduced time-to-hire by surfacing relevant candidates.
+
+---
+
+## Best Practices
+
+- **Consistent error handling** in services with user-friendly messages.
+- **Optimistic UI updates** for status changes where safe.
+- **Accessibility**: ARIA labels, keyboard navigation, and contrast checks.
+- **Performance**: memoized selectors and lazy-loaded routes.
+
+---
+
+## Limitations
+
+- Large tables may require pagination or virtualization.
+- Session-based auth requires careful CSRF handling for non-GET requests.
+
+---
+
+## FAQ
+
+**Q: Why use Redux Persist?**  
+A: It reduces redundant API calls and preserves user context across reloads.
+
+**Q: Can the frontend run independently?**  
+A: It can serve static pages, but full functionality requires backend APIs.
+
+---
+
+## Future Considerations
+
+- **Component library** for consistent UI across teams.
+- **Role-based UI** that hides or reveals features per user role.
+- **Telemetry** for UX analytics and error reporting.
